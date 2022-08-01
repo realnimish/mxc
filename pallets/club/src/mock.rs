@@ -56,6 +56,7 @@ parameter_types! {
 
 impl pallet_club::Config for Test {
 	type Event = Event;
+	type WeightInfo = ();
 	type MaxLength = MaxLength;
 }
 

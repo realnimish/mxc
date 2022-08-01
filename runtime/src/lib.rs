@@ -267,6 +267,7 @@ parameter_types! {
 
 impl pallet_club::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = pallet_club::weights::SubstrateWeight<Runtime>;
 	type MaxLength = MaxLength;
 }
 

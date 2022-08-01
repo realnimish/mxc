@@ -11,14 +11,19 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+pub mod weights;
+pub use weights::WeightInfo;
+
 #[frame_support::pallet]
 pub mod pallet {
+	use super::WeightInfo;
 	use frame_support::{inherent::Vec, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 
 		/// The maximum length a name may be.
 		#[pallet::constant]
@@ -82,7 +87,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::add_new_club())]
 		pub fn add_new_club(
 			origin: OriginFor<T>,
 			club_id: ClubId,
@@ -102,7 +107,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::remove_club(Pallet::<T>::get_club_members_count(*club_id)))]
 		pub fn remove_club(origin: OriginFor<T>, club_id: ClubId) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(Self::clubs(club_id).is_some(), Error::<T>::ClubNotFound);
@@ -116,7 +121,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::add_member())]
 		pub fn add_member(
 			origin: OriginFor<T>,
 			club_id: ClubId,
@@ -137,7 +142,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(10_000)]
+		#[pallet::weight(T::WeightInfo::remove_member())]
 		pub fn remove_member(
 			origin: OriginFor<T>,
 			club_id: ClubId,
@@ -164,6 +169,13 @@ pub mod pallet {
 
 		pub fn get_all_members(club_id: &ClubId) -> Vec<T::AccountId> {
 			Membership::<T>::iter_key_prefix(&club_id).collect()
+		}
+
+		fn get_club_members_count(club_id: ClubId) -> u32 {
+			match Self::clubs(club_id) {
+				None => 0,
+				Some(club) => club.members_count,
+			}
 		}
 	}
 }
