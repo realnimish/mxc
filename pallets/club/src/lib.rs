@@ -33,7 +33,7 @@ pub mod pallet {
 	#[codec(mel_bound())]
 	pub struct ClubDetails<T: Config> {
 		pub id: ClubId,
-		pub members_count: u128,
+		pub members_count: u32,
 		pub name: BoundedVec<u8, T::MaxLength>,
 	}
 
@@ -103,6 +103,10 @@ pub mod pallet {
 		pub fn remove_club(origin: OriginFor<T>, club_id: ClubId) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(Self::clubs(club_id).is_some(), Error::<T>::ClubNotFound);
+
+			let sz = Self::clubs(&club_id).unwrap().members_count;
+			let res = Membership::<T>::clear_prefix(&club_id, sz, None);
+			ensure!(res.maybe_cursor == None, Error::<T>::StorageOverflow);
 
 			Clubs::<T>::remove(&club_id);
 			Self::deposit_event(Event::<T>::ClubRemoved(club_id));

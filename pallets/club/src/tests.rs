@@ -61,10 +61,12 @@ fn test_remove_club() {
 		// 1. Add a club
 		let name = "Real Madrid".as_bytes().to_vec();
 		assert_ok!(ClubModule::add_new_club(Origin::root(), 1, name.clone()));
+		assert_ok!(ClubModule::add_member(Origin::root(), 1, 001));
 
 		// 2. Verify removing club works
 		assert_ok!(ClubModule::remove_club(Origin::root(), 1));
 		assert!(ClubModule::clubs(1).is_none());
+		assert_eq!(ClubModule::get_all_members(&1), vec![] as Vec<u64>);
 
 		// 3. Verify event is emitted
 		let events = System::events();
