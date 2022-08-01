@@ -8,41 +8,48 @@ use frame_system::RawOrigin;
 benchmarks! {
 
 	add_new_club {
-		let c in 1 .. 10000;
-		let l in 1 .. 50;
-	}: _(RawOrigin::Root, c, vec![0u8;l as usize])
+		let club_id = 123;
+		let name_len = 50;	// benchmark name_len?
+	}: _(RawOrigin::Root, club_id, vec![0u8; name_len])
 	verify {
-		assert!(ClubModule::Pallet::<T>::clubs(c).is_some());
+		assert!(ClubModule::Pallet::<T>::clubs(club_id).is_some());
 	}
 
 	add_member {
-		let c in 1 .. 10000;
-		let l in 1 .. 50;
+		let club_id = 123;
+		let name_len = 50;
 		let member: T::AccountId = account("member", 0, 0);
-		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), c, vec![0u8;l as usize])?;
-	}: _(RawOrigin::Root, c, member.clone())
+		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), club_id, vec![0u8; name_len])?;
+	}: _(RawOrigin::Root, club_id, member.clone())
 	verify {
-		assert!(ClubModule::Pallet::<T>::membership(c,member));
+		assert!(ClubModule::Pallet::<T>::membership(club_id, member));
 	}
 
 	remove_club {
-		let c in 1 .. 10000;
-		let l in 1 .. 50;
-		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), c, vec![0u8;l as usize])?;
-	}: _(RawOrigin::Root, c)
+		let s in 0 .. 100000;
+		let club_id = 123;
+		let name_len = 50;
+		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), club_id, vec![0u8; name_len])?;
+
+		for i in 0..s {
+			let member: T::AccountId = account("member", i, 0);
+			ClubModule::Pallet::<T>::add_member(RawOrigin::Root.into(), club_id, member)?;
+		}
+		assert_eq!(ClubModule::Pallet::<T>::clubs(club_id).unwrap().members_count, s);
+	}: _(RawOrigin::Root, club_id)
 	verify {
-		assert!(ClubModule::Pallet::<T>::clubs(c).is_none());
+		assert!(ClubModule::Pallet::<T>::clubs(club_id).is_none());
 	}
 
 	remove_member {
-		let c in 1 .. 10000;
-		let l in 1 .. 50;
+		let club_id = 123;
+		let name_len = 50;
 		let member: T::AccountId = account("member", 0, 0);
-		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), c, vec![0u8;l as usize])?;
-		ClubModule::Pallet::<T>::add_member(RawOrigin::Root.into(), c, member.clone())?;
-	}: _(RawOrigin::Root, c, member.clone())
+		ClubModule::Pallet::<T>::add_new_club(RawOrigin::Root.into(), club_id, vec![0u8; name_len])?;
+		ClubModule::Pallet::<T>::add_member(RawOrigin::Root.into(), club_id, member.clone())?;
+	}: _(RawOrigin::Root, club_id, member.clone())
 	verify {
-		assert!(!ClubModule::Pallet::<T>::membership(c,member));
+		assert!(!ClubModule::Pallet::<T>::membership(club_id, member));
 	}
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test)
